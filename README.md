@@ -67,10 +67,14 @@ inference 실행 시 디폴트는 이미지 저장 O, txt는 저장 X
 code 내부에서 return 하는 것 
 
 images : 원본 이미지 list. 사이즈는 원본 사이즈 그대로, 0~255 normalize 
+
 bboxes : bboxes list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 다름. normalized 하지 않은 [x1, y1, x2, y2]를 return
+
 confs : conf list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 다름. [conf]
 
+
 ### 주의 : txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. 
+
 ### 코드 내의 return 값과 다름 
 
 
