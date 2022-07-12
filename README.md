@@ -82,12 +82,20 @@ confs : conf list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 �
 알아둬야 할 config 설명
 
 --detect_weights weights/best.pt 로 고정  (기존 yolo로 해보고 싶으면 삭제 가능)
+
 --source 인풋 이미지 폴더명 or 파일명 (동영상 가능)
+
 --save-txt : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
+
 --save-conf : 플래그로 줄 시 runs 안에 bbox.txt에 conf 추가
+
 --nosave : 플래그로 줄 시 이미지 저장 X 
+
 --imgsz : int로 주기 가능. default는 640
+
 --conf_thres : float로 주기 가능. default는 0.9 
 
+
 ## Todo (수요일 오후 까지)
+
 train.py, test.py code 정리 간단히 하고 readme 추가 
