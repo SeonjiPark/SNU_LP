@@ -6,9 +6,13 @@ Pytorch >= 1.7.0
 Python >= 3.7.0
 
 git clone https://github.com/SeonjiPark/SNU_LP.git
+
 cd SNU_LP
+
 conda create -n SNU_LP python=3.7
+
 conda activate SNU_LP
+
 pip install -r requirements.txt
 
 # Dataset
