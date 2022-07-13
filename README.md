@@ -16,9 +16,6 @@ conda activate SNU_LP
 pip install -r requirements.txt
 
 # Dataset
-디렉토리 내에 road_driving.mp4 존재
--> 차후 삭제 예정
-
 Z 서버에서 SHARE안에 teset dataset 있음
 
 # Directory 설명
@@ -66,22 +63,19 @@ inference 실행 시 디폴트는 이미지 저장 O, txt는 저장 X
 
 code 내부에서 return 하는 것 
 
-images : 원본 이미지 list. 사이즈는 원본 사이즈 그대로, 0~255 normalize 
+image : [H, W, C] 원본 이미지. 사이즈는 원본 사이즈 그대로, 0~255 normalize 
 
-bboxes : bboxes list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 다름. normalized 하지 않은 [x1, y1, x2, y2]를 return
+bboxes : [pred_num, 4] 해당 이미지에서 predict한 bbox. normalized 하지 않은 [x1, y1, x2, y2]
 
-confs : conf list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 다름. [conf]
+confs : confidence float 값
 
 
-### 주의 : txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. 
-
-### 코드 내의 return 값과 다름 
-
+### 주의 : bbox txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. (return 값과 다름)
 
 
 알아둬야 할 config 설명
 
---detect_weights weights/best.pt 로 고정  (기존 yolo로 해보고 싶으면 삭제 가능)
+--detect_weights weights/best.pt 로 고정
 
 --source 인풋 이미지 폴더명 or 파일명 (동영상 가능)
 
@@ -94,8 +88,3 @@ confs : conf list. 이미지 숫자랑 len을 맞췄으니 각각의 길이가 �
 --imgsz : int로 주기 가능. default는 640
 
 --conf_thres : float로 주기 가능. default는 0.9 
-
-
-## Todo (수요일 오후 까지)
-
-train.py, test.py code 정리 간단히 하고 readme 추가 
