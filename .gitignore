@@ -1,4 +1,5 @@
 ./runs/*
+./detection/runs/*
 ./road_driving.mp4
 ./weights
 __pycache__
