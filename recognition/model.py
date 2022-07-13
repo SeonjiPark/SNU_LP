@@ -15,6 +15,8 @@ limitations under the License.
 """
 
 import torch.nn as nn
+import sys
+sys.path.append("./recognition/")
 
 from modules.transformation import TPS_SpatialTransformerNetwork
 from modules.feature_extraction import VGG_FeatureExtractor, RCNN_FeatureExtractor, ResNet_FeatureExtractor
