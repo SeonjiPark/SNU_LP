@@ -79,12 +79,12 @@ confs : confidence float 값
 
 --source 인풋 이미지 폴더명 or 파일명 (동영상 가능)
 
---save-txt : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
+--save-bbox : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
 
 --save-conf : 플래그로 줄 시 runs 안에 bbox.txt에 conf 추가
 
 --nosave : 플래그로 줄 시 이미지 저장 X 
 
---imgsz : int로 주기 가능. default는 640
+--detect_imgsz : int로 주기 가능. default는 640
 
 --conf_thres : float로 주기 가능. default는 0.9 
