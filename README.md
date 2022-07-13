@@ -55,10 +55,10 @@ Z 서버에서 SHARE안에 teset dataset 있음
 추가 예정
 
 ## === Inference ===
-python inference.py --detect_weights weights/best.pt --source ./road_driving.mp4 --save-txt --device 0
+python inference.py --detect_weights weights/best.pt --source ./road_driving.mp4 --save-bbox --device 0
 
 inference 실행 시 디폴트는 이미지 저장 O, txt는 저장 X
-위와 같이 --save-txt 를 추가하면 bbox를 txt로 저장함. 
+위와 같이 --save-bbox 를 추가하면 bbox를 txt로 저장함. 
 
 
 code 내부에서 return 하는 것 
