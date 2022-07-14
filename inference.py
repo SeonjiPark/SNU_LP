@@ -8,6 +8,7 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 
 from config import parse_args
 from recognition.model import Recognition_Model
@@ -62,7 +63,8 @@ def main():
 
     ### Font for drawing Korean
     fontpath = "gulim.ttc"
-    # font = ImageFont.truetype(fontpath, 20)
+    font = ImageFont.truetype(fontpath, 20)
+    toTensor = transforms.ToTensor()
     ######### Need to add font file
 
     ### Set up GPU
@@ -92,10 +94,11 @@ def main():
     recognition_network = Recognition_Model(args, device)
     recognition_network.to(device)
     # Load network weight
-    # recognition_checkpoint = torch.load(args.weight_dir + args.recognition_weight)
-    # recognition_network.load_state_dict(recognition_checkpoint['network'])
-    # with torch.no_grad():
-    #     recognition_network.eval()
+    recognition_checkpoint = torch.load(args.weight_dir + args.recognition_weight)
+    recognition_network.load_state_dict(recognition_checkpoint['network'])
+    with torch.no_grad():
+        detection_network.eval()
+        recognition_network.eval()
 
 
     ### Load Datas
@@ -107,6 +110,7 @@ def main():
     time_line, seen = [0.0, 0.0, 0.0], 0
 
     ### start inference
+    frame_idx = 0
     for path, im, im0s, vid_cap, s in dataset:
         # image preprocessing
         t1 = time_sync()
@@ -144,19 +148,24 @@ def main():
             # img = img         # [H, W, 3],      0 ~ 255 normalized
 
             # saving detection result image and bbox.txt -> 차후에 recognition이랑 통합?
-            s = save_detection_result(args, save_img, save_dir, det, names, s, p, dataset.mode, frame, img, im)
+            s = save_detection_result(args, save_img, save_dir, det, names, s, p, dataset.mode, frame, img.copy(), im)
 
 
-            #########################
-            ###### Recognition ######
-            #########################
-            # recog_result = do_recognition(args, img, bbox, recognition_network, converter)
-            # img = draw_result(img, bbox, recog_result, font)
-
+        #########################
+        ###### Recognition ######
+        #########################
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_rec = toTensor(img).to(device)
+        recog_result = do_recognition(args, img_rec, bbox, recognition_network, converter, device)
+        img = draw_result(img, bbox, recog_result, font, frame_idx, args.save_dir)
 
         # Print detection time
         if args.print_detect:
             LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
+
+        frame_idx += 1
+
+    img2video(args.save_dir, args.save_videoname)
 
     # Print detection results
     t = tuple(x / seen * 1E3 for x in time_line)  # speeds per image
@@ -166,18 +175,13 @@ def main():
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
 
 
+def draw_result(img, bboxes, recog_result, font, frame_idx, SAVE_DIR):
 
-
-def draw_result(img, bboxes, recog_result, font):
-
-    SAVE_DIR = 'inference_result/'
     os.makedirs(SAVE_DIR, exist_ok=True)
 
     bbox_num = len(bboxes)
 
-    for idx in range(bbox_num):
-        img = img.detach().cpu().numpy()
-
+    for idx in range(bbox_num):  
         cur_lp = bboxes[idx].detach().cpu().numpy()
         # Draw bbox
         cv2.rectangle(img, (int(cur_lp[0]), int(cur_lp[1])), (int(cur_lp[2]), int(cur_lp[3])), color=(0,0,255), thickness=8)
@@ -192,10 +196,28 @@ def draw_result(img, bboxes, recog_result, font):
 
         img = np.array(img_pil)
 
-        outname = SAVE_DIR + str(idx).zfill(3) + '.jpg'
-        cv2.imwrite(outname, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    outname = SAVE_DIR + str(frame_idx).zfill(3) + '.jpg'
+    cv2.imwrite(outname, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
+def img2video(frame_dir, video_name):
+
+    if '.mp4' in video_name:
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    else:
+        fourcc = 0
+
+    frames = [frame for frame in os.listdir(frame_dir) if frame.endswith(".jpg")]
+    frames = sorted(frames)
+    frame = cv2.imread(os.path.join(frame_dir, frames[0]))
+    height, width, layers = frame.shape
+
+    video = cv2.VideoWriter(video_name, fourcc, 24.0, (width, height))
+    
+    for frame in frames:
+        video.write(cv2.imread(os.path.join(frame_dir, frame)))
+    
+    video.release()
 
 
 def save_detection_result(args, save_img, save_dir, det, names, s, p,mode, frame, imc, im):

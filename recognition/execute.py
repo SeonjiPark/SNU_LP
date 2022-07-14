@@ -9,7 +9,7 @@ def decode_province(text, province, province_replace):
             text = text.replace(prov, province[idx])
     return text
 
-def do_recognition(args, img, bboxes, recognition_network, converter):
+def do_recognition(args, img, bboxes, recognition_network, converter, device):
 
     bbox_num = len(bboxes)
 
@@ -22,9 +22,12 @@ def do_recognition(args, img, bboxes, recognition_network, converter):
             x1, y1, x2, y2 = bboxes[idx][0].long(), bboxes[idx][1].long(), bboxes[idx][2].long(), bboxes[idx][3].long()
 
             lp_img = img[:, y1:y2, x1:x2]
-            lp_img = F.interpolate(lp_img, size=[args.imgH, args.imgW], mode='bicubic')
+            lp_img = lp_img[None]
+            lp_img = F.interpolate(lp_img, size=[args.imgH, args.imgW], mode='bicubic', align_corners=True)
             lp_imgs[idx] = lp_img
         
+        lp_imgs = lp_imgs.to(device)
+
         # Feed to network
         preds = recognition_network(lp_imgs, None)
         preds_size = torch.IntTensor([preds.size(1)] * lp_imgs.size(0))

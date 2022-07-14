@@ -20,7 +20,7 @@ def parse_training_args(parser):
 
     # Detection Paramters
     parser.add_argument('--detect_weights', nargs='+', type=str, default=ROOT /  './weights/best.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--source', type=str, default='test1.mp4', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / './detection/data/AD.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--detect_imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
 
@@ -68,6 +68,8 @@ def parse_training_args(parser):
     # Directory parameters
     parser.add_argument('--data_dir', type=str, default="./road_driving.mp4/")
     parser.add_argument('--weight_dir', type=str, default='weights/')
+    parser.add_argument('--save_dir', type=str, default='inference_result/')
+    parser.add_argument('--save_videoname', type=str, default='out.avi')
     parser.add_argument('--recognition_weight', type=str, default="recognition.pth")
 
 def parse_args():
