@@ -5,7 +5,6 @@ from PIL import ImageFont, ImageDraw, Image
 import sys
 from pathlib import Path
 
-
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
@@ -25,6 +24,7 @@ from detection.utils.general import (LOGGER, check_file, check_img_size, check_i
                            increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
 from detection.utils.plots import Annotator, colors, save_one_box
 from detection.utils.torch_utils import select_device, time_sync
+from detection.execute import preprocess_img, do_detect, save_detection_result
 os.chdir(SAVE_CWD)
 
 province = ['대구서', '동대문', '미추홀', '서대문', '영등포', '인천서', '인천중',
@@ -65,7 +65,6 @@ def main():
     fontpath = "gulim.ttc"
     font = ImageFont.truetype(fontpath, 20)
     toTensor = transforms.ToTensor()
-    ######### Need to add font file
 
     ### Set up GPU
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -103,73 +102,52 @@ def main():
 
     ### Load Datas
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
+    """
+    dataloader = DataLoader(
+        dataset=dataset,
+        batch_size=1,
+        num_workers=args.num_workers,
+        shuffle=False,
+        drop_last=False
+    )
+    """
     batch_size = 1  # batch_size
     # vid_path, vid_writer = [None] * batch_size, [None] * batch_size
     detection_network.warmup(imgsz=(1 if pt else batch_size, 3, *imgsz))  # warmup
 
-    time_line, seen = [0.0, 0.0, 0.0], 0
+    # time_line, seen = [0.0, 0.0, 0.0], 0
 
     ### start inference
     frame_idx = 0
-    for path, im, im0s, vid_cap, s in dataset:
+    for path, img0, cap, s, img_size, stride, auto in dataset:
+        # import ipdb; ipdb.set_trace()
+
         # image preprocessing
-        t1 = time_sync()
-        im = torch.from_numpy(im).to(device)
-        im = im.half() if detection_network.fp16 else im.float()  # uint8 to fp16/32
-        im /= 255  # 0 - 255 to 0.0 - 1.0
-        if len(im.shape) == 3:
-            im = im[None]  # expand for batch dim
-        t2 = time_sync()
-        time_line[0] += t2 - t1
+        img = torch.from_numpy(img0).to(device)
+        im_resize = preprocess_img(img, detection_network.fp16, img_size, stride, auto)
 
         # Do Detection Inference
-        pred = detection_network(im, augment=False, visualize=False)
-        t3 = time_sync()
-        time_line[1] += t3 - t2
-
-        # Detection NMS
-        pred = non_max_suppression(pred, args.conf_thres, args.iou_thres, None, False, max_det=args.max_det)
-        time_line[2] += time_sync() - t3
-
-
-        # Process predictions
-        for i, det in enumerate(pred):  # per predictions
-            seen += 1
-            p, img, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-
-            # Rescale boxes from img_size to img size
-            t3 = time_sync()
-            det[:, :4] = scale_coords(im.shape[2:], det[:, :4], img.shape).round()
-            time_line[2] += time_sync() - t3
-
-            # pred results
-            bbox = det[:, :4]   # [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
-            conf = det[:, 4:5]  # [pred_num, 1]                        ([] if failed to pred)
-            # img = img         # [H, W, 3],      0 ~ 255 normalized
-
-            # saving detection result image and bbox.txt -> 차후에 recognition이랑 통합?
-            s = save_detection_result(args, save_img, save_dir, det, names, s, p, dataset.mode, frame, img.copy(), im)
-
+        pred = do_detect(args, detection_network, im_resize, img0.copy())
+        bbox = pred[:, :4]  # [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
 
         #########################
         ###### Recognition ######
         #########################
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_rec = toTensor(img).to(device)
-        recog_result = do_recognition(args, img_rec, bbox, recognition_network, converter, device)
-        img = draw_result(img, bbox, recog_result, font, frame_idx, args.save_dir)
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # img_rec = toTensor(img).to(device)
+        # recog_result = do_recognition(args, img_rec, bbox, recognition_network, converter, device)
+        # img = draw_result(img, bbox, recog_result, font, frame_idx, args.save_dir)
+
+        # saving detection result image and bbox.txt -> 차후에 recognition이랑 통합?
+        p, frame = path, getattr(dataset, 'frame', 0)
+        save_detection_result(args, save_img, save_dir, pred, names, s, p, dataset.mode, frame, img, im_resize)
 
         # Print detection time
-        if args.print_detect:
-            LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
-
         frame_idx += 1
 
     img2video(args.save_dir, args.save_videoname)
 
     # Print detection results
-    t = tuple(x / seen * 1E3 for x in time_line)  # speeds per image
-    LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
     if args.save_bbox or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if args.save_bbox else ''
         LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
@@ -218,66 +196,6 @@ def img2video(frame_dir, video_name):
         video.write(cv2.imread(os.path.join(frame_dir, frame)))
     
     video.release()
-
-
-def save_detection_result(args, save_img, save_dir, det, names, s, p,mode, frame, imc, im):
-    # prepare detection result path
-    p = Path(p)  # to Path
-    save_path = str(save_dir / p.name)  # im.jpg
-    txt_path = str(save_dir / 'labels' / p.stem) + ('' if mode == 'image' else f'_{frame}')  # im.txt
-    s += '%gx%g ' % im.shape[2:]  # print string
-    gn = torch.tensor(imc.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-    annotator = Annotator(imc, line_width=3, example=str(names))
-
-    # prepare Print results
-    for c in det[:, -1].unique():
-        n = (det[:, -1] == c).sum()  # detections per class
-        s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
-    for *xyxy, conf, cls in reversed(det):
-        if args.save_bbox:  # Write to file
-            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-            line = (cls, *xywh, conf) if args.save_conf else (cls, *xywh)  # label format
-            with open(txt_path + '.txt', 'a') as f:
-                f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
-        if save_img or args.save_crop:  # Add bbox to image
-            c = int(cls)  # integer class
-            label = None if args.hide_labels else (names[c] if args.hide_conf else f'{names[c]} {conf:.2f}')
-            annotator.box_label(xyxy, label, color=colors(c, True))
-            if args.save_crop:
-                save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
-
-    # Stream results
-    im0 = annotator.result()
-
-    # Save results (image with detections)
-    if save_img:
-        if mode == 'image':
-            cv2.imwrite(save_path, im0)
-        elif mode == 'video':
-            im_save_path = save_path[:-4] + "_" + str(frame) + ".png"
-            cv2.imwrite(im_save_path, im0)
-        """
-        # video로 save하는 코드 -> recognition 까지 완성한 후 delete? or 추가?
-        else:  # 'video'
-            if vid_path[i] != save_path:  # new video
-                vid_path[i] = save_path
-                if isinstance(vid_writer[i], cv2.VideoWriter):
-                    vid_writer[i].release()  # release previous video writer
-                if vid_cap:  # video
-                    fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                    w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                else:  # stream
-                    fps, w, h = 30, im0.shape[1], im0.shape[0]
-                save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-            vid_writer[i].write(im0)
-        """
-
-    return s
-
 
 
 if __name__ == "__main__":

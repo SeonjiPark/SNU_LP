@@ -8,9 +8,12 @@ import random
 
 import cv2
 import numpy as np
+import torchvision.transforms.functional as F
+import torch.nn as nn
 
 from utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from utils.metrics import bbox_ioa
+
 
 
 class Albumentations:
@@ -114,10 +117,14 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     dh /= 2
 
     if shape[::-1] != new_unpad:  # resize
-        im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
+        im = im.permute(2, 1, 0) # C, W, H
+        im = F.resize(im, new_unpad)
+        # im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+    # im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+    im = nn.functional.pad(im, (top, bottom, left, right), mode='constant', value=114.0)
+    im = im.permute(2, 1, 0)
     return im, ratio, (dw, dh)
 
 
