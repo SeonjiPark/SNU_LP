@@ -28,11 +28,10 @@ def parse_training_args(parser):
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
 
-    parser.add_argument('--print-detect', default=False, help='print intermediate detection results')
     parser.add_argument('--save-bbox', default=False, help='save results to *.txt')
     parser.add_argument('--save-conf', default=False, help='save confidences in --save-txt labels')
     parser.add_argument('--save-crop', default=False, help='save cropped prediction boxes')
-    parser.add_argument('--nosave', default=False, help='do not save images/videos')
+    parser.add_argument('--save-detect-img', default=False, help='save detection images/videos')
 
     # experiment parameter
     parser.add_argument('--project', default=ROOT / 'runs/detect', help='save results to project/name')

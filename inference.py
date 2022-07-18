@@ -62,10 +62,6 @@ def main():
     font = ImageFont.truetype(fontpath, 20)
     toTensor = transforms.ToTensor()
 
-    ### check detection Directories
-    save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
-    (save_dir / 'labels' if args.save_bbox else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
     ### Set up GPU
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_num)
@@ -89,45 +85,35 @@ def main():
     ### Load Datas
     ## Read source
     source = str(args.source)
-    save_img = not args.nosave and not source.endswith('.txt')  # save inference images
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
-
 
     ### start inference
     frame_idx = 0
     for path, img0, cap, s, img_size, stride, auto in dataset:
-        # image preprocessing
+        # img [H, W, C], 0~255 normalized
         img = torch.from_numpy(img0).to(device)
-        im_resize = preprocess_img(img, detection_network.fp16, img_size, stride, auto)
 
         # Do Detection Inference
-        pred = do_detect(args, detection_network, im_resize, img0.copy())
-        bbox = pred[:, :4]  # [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
-        # img [H, W, C], 0~255 normalized
+        preds = do_detect(args, detection_network, img, img_size, stride, auto)
+        bboxes = preds[:, :4]  # bbox = [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
+        img_rec = img.permute(2, 0, 1) # HWC -> CHW
 
-        #########################
-        ###### Recognition ######
-        #########################
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # img_rec = toTensor(img).to(device)
-        # recog_result = do_recognition(args, img_rec, bbox, recognition_network, converter, device)
-        # img = draw_result(img, bbox, recog_result, font, frame_idx, args.save_dir)
-
-        # saving detection result image and bbox.txt -> 차후에 recognition이랑 통합?
-        save_detection_result(args, save_img, save_dir, pred, names, path, dataset.mode, getattr(dataset, 'frame', 0), np.asarray(img.to("cpu")))
+        recog_result = do_recognition(args, img_rec, bboxes, recognition_network, converter, device)
+        draw_result(img, preds, recog_result, font, frame_idx, args.save_dir, dataset, args, names)
 
         # Print detection time
         frame_idx += 1
 
     img2video(args.save_dir, args.save_videoname)
 
-    # Print detection results
-    if args.save_bbox or save_img:
-        s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if args.save_bbox else ''
-        LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
-
-
-def draw_result(img, bboxes, recog_result, font, frame_idx, SAVE_DIR):
+def draw_result(img, preds, recog_result, font, frame_idx, SAVE_DIR, dataset, args, names):
+    bboxes = preds[:, :4]
+    img = np.asarray(img.to("cpu"))
+    if args.save-bbox or args.save-detect-img:
+        frame = getattr(dataset, 'frame', 0)
+        save_detection_result(args, preds, names, dataset.mode, frame, img.copy())
 
     os.makedirs(SAVE_DIR, exist_ok=True)
 
