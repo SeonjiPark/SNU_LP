@@ -8,6 +8,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from torch.utils.data.dataloader import DataLoader
 
 from config import parse_args
 from recognition.model import Recognition_Model
@@ -18,13 +19,9 @@ SAVE_CWD = os.getcwd()
 os.chdir(os.getcwd() + "/detection")
 sys.path.append(os.getcwd())
 
-from detection.models.common import DetectMultiBackend
-from detection.utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
-from detection.utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
-from detection.utils.plots import Annotator, colors, save_one_box
-from detection.utils.torch_utils import select_device, time_sync
-from detection.execute import preprocess_img, do_detect, save_detection_result
+from detection.utils.datasets import LoadImages
+from detection.utils.general import LOGGER, colorstr, cv2, increment_path, xyxy2xywh
+from detection.execute import preprocess_img, do_detect, save_detection_result, build_detect_model
 os.chdir(SAVE_CWD)
 
 province = ['대구서', '동대문', '미추홀', '서대문', '영등포', '인천서', '인천중',
@@ -47,7 +44,6 @@ FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 def main():
     args = parse_args()
@@ -66,28 +62,18 @@ def main():
     font = ImageFont.truetype(fontpath, 20)
     toTensor = transforms.ToTensor()
 
+    ### check detection Directories
+    save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
+    (save_dir / 'labels' if args.save_bbox else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+
     ### Set up GPU
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_num)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    ### Read source
-    source = str(args.source)
-    save_img = not args.nosave and not source.endswith('.txt')  # save inference images
-
-
-    ### check detection Directories
-    save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
-    (save_dir / 'labels' if args.save_bbox else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
-
     ### Network Declare
     ## Detection
-    detection_network = DetectMultiBackend(args.detect_weights, device=device, dnn=False, data=args.data, fp16=args.half)
-    stride, names, pt = detection_network.stride, detection_network.names, detection_network.pt
-    if len(args.detect_imgsz) ==1:
-        args.detect_imgsz = [args.detect_imgsz[0], args.detect_imgsz[0]]
-    imgsz = check_img_size(args.detect_imgsz, s=stride)  # check image size
+    detection_network, imgsz, stride, names, pt = build_detect_model(args, device)
 
     ## Recognition
     recognition_network = Recognition_Model(args, device)
@@ -101,27 +87,15 @@ def main():
 
 
     ### Load Datas
+    ## Read source
+    source = str(args.source)
+    save_img = not args.nosave and not source.endswith('.txt')  # save inference images
     dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
-    """
-    dataloader = DataLoader(
-        dataset=dataset,
-        batch_size=1,
-        num_workers=args.num_workers,
-        shuffle=False,
-        drop_last=False
-    )
-    """
-    batch_size = 1  # batch_size
-    # vid_path, vid_writer = [None] * batch_size, [None] * batch_size
-    detection_network.warmup(imgsz=(1 if pt else batch_size, 3, *imgsz))  # warmup
 
-    # time_line, seen = [0.0, 0.0, 0.0], 0
 
     ### start inference
     frame_idx = 0
     for path, img0, cap, s, img_size, stride, auto in dataset:
-        # import ipdb; ipdb.set_trace()
-
         # image preprocessing
         img = torch.from_numpy(img0).to(device)
         im_resize = preprocess_img(img, detection_network.fp16, img_size, stride, auto)
@@ -129,6 +103,7 @@ def main():
         # Do Detection Inference
         pred = do_detect(args, detection_network, im_resize, img0.copy())
         bbox = pred[:, :4]  # [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
+        # img [H, W, C], 0~255 normalized
 
         #########################
         ###### Recognition ######
@@ -139,8 +114,7 @@ def main():
         # img = draw_result(img, bbox, recog_result, font, frame_idx, args.save_dir)
 
         # saving detection result image and bbox.txt -> 차후에 recognition이랑 통합?
-        p, frame = path, getattr(dataset, 'frame', 0)
-        save_detection_result(args, save_img, save_dir, pred, names, s, p, dataset.mode, frame, img, im_resize)
+        save_detection_result(args, save_img, save_dir, pred, names, path, dataset.mode, getattr(dataset, 'frame', 0), np.asarray(img.to("cpu")))
 
         # Print detection time
         frame_idx += 1
