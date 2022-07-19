@@ -37,7 +37,7 @@ def parse_training_args(parser):
 
     parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
     parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
-    parser.add_argument('--save_detect_img', default=True, help='save detection images/videos')
+    parser.add_argument('--save_detect_img', default=False, help='save detection images/videos')
 
     # Weights to load from
     parser.add_argument('--weight_dir', type=str, default='weights/')

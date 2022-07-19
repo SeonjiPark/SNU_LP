@@ -139,7 +139,8 @@ def main():
         img2video(EXP_NAME, RECOG_SAVE_DIR, args.save_videoname, dataset.fps)
         time_line[4] += time() - start
 
-    print(f'Total inference time is {sum(time_line[:5]):.3f} s, with {frame_idx} frames')
+    print(f'Inference on {frame_idx} frames has done !')
+    print(f'Total executing time is {sum(time_line[:5]):.3f} s = Inferencing ({sum(time_line[:3]):.3f}s) + Saving Result ({sum(time_line[3:]):.3f})s')
     print(f'Inference time per frame is {sum(time_line[:3]) / frame_idx:.3f}s = (GPU load {time_line[0]/frame_idx:.3f}s) + (Detection {time_line[1]/frame_idx:.3f}s) + (Recognition {time_line[2]/frame_idx:.3f}s)')
     print(f'Saving image results takes {time_line[3] / frame_idx:.3f}s per frame, and saving video result takes {time_line[4]:.3f}s')
 
