@@ -20,7 +20,7 @@ os.chdir(os.getcwd() + "/detection")
 sys.path.append(os.getcwd())
 
 from detection.utils.datasets import LoadImages
-from detection.utils.general import LOGGER, colorstr, cv2, increment_path, xyxy2xywh
+from detection.utils.general import LOGGER, colorstr, increment_path
 from detection.execute import preprocess_img, do_detect, save_detection_result, build_detect_model
 os.chdir(SAVE_CWD)
 
@@ -81,6 +81,12 @@ def main():
         detection_network.eval()
         recognition_network.eval()
 
+    LOGGER.info("Load Network Weights Done!")
+
+    ### check detection Directories
+    if args.save_bbox or args.save_detect_img:
+        detect_save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
+        (detect_save_dir / 'labels' if args.save_bbox else detect_save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     ### Load Datas
     ## Read source
@@ -96,24 +102,26 @@ def main():
         # Do Detection Inference
         preds = do_detect(args, detection_network, img, img_size, stride, auto)
         bboxes = preds[:, :4]  # bbox = [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
-        img_rec = img.permute(2, 0, 1) # HWC -> CHW
 
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # img_rec = toTensor(img).to(device)
+        img = img[:, :, [2, 1, 0]]  # RGB -> BGR
+        img_rec = img.permute(2, 0, 1) / 255 # HWC -> CHW
+
         recog_result = do_recognition(args, img_rec, bboxes, recognition_network, converter, device)
-        draw_result(img, preds, recog_result, font, frame_idx, args.save_dir, dataset, args, names)
+        draw_result(img, preds, recog_result, font, frame_idx, args.save_dir,
+                    dataset, args, names, path, detect_save_dir)
 
-        # Print detection time
         frame_idx += 1
 
     img2video(args.save_dir, args.save_videoname)
 
-def draw_result(img, preds, recog_result, font, frame_idx, SAVE_DIR, dataset, args, names):
-    bboxes = preds[:, :4]
+
+def draw_result(img, preds, recog_result, font, frame_idx, SAVE_DIR, dataset, args, names, path, detect_save_dir):
     img = np.asarray(img.to("cpu"))
-    if args.save-bbox or args.save-detect-img:
+    bboxes = preds[:, :4]
+
+    if args.save_bbox or args.save_detect_img:
         frame = getattr(dataset, 'frame', 0)
-        save_detection_result(args, preds, names, dataset.mode, frame, img.copy())
+        save_detection_result(args, preds, names, path, dataset.mode, frame, img.copy(), detect_save_dir)
 
     os.makedirs(SAVE_DIR, exist_ok=True)
 

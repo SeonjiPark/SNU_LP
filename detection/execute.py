@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from pathlib import Path
 
-from utils.general import  non_max_suppression, scale_coords, check_img_size, increment_path
+from utils.general import  non_max_suppression, scale_coords, check_img_size, xyxy2xywh
 from utils.augmentations import letterbox
 from utils.plots import Annotator, colors, save_one_box
 
@@ -45,12 +45,7 @@ def do_detect(args, detection_network, img, img_size, stride, auto):
 
     return det
 
-def save_detection_result(args, det, names, p,mode, frame, imc):
-    # prepare detection result path
-    ### check detection Directories
-    save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
-    (save_dir / 'labels' if args.save_bbox else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
+def save_detection_result(args, det, names, p, mode, frame, imc, save_dir):
     p = Path(p)  # to Path
     save_path = str(save_dir / p.name)  # im.jpg
     txt_path = str(save_dir / 'labels' / p.stem) + ('' if mode == 'image' else f'_{frame}')  # im.txt
@@ -65,7 +60,7 @@ def save_detection_result(args, det, names, p,mode, frame, imc):
             with open(txt_path + '.txt', 'a') as f:
                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-        if args.save-detect-img or args.save_crop:  # Add bbox to image
+        if args.save_detect_img or args.save_crop:  # Add bbox to image
             c = int(cls)  # integer class
             label = None if args.hide_labels else (names[c] if args.hide_conf else f'{names[c]} {conf:.2f}')
             annotator.box_label(xyxy, label, color=colors(c, True))
@@ -76,29 +71,12 @@ def save_detection_result(args, det, names, p,mode, frame, imc):
     im0 = annotator.result()
 
     # Save results (image with detections)
-    if args.save-detect-img:
+    if args.save_detect_img:
         if mode == 'image':
             cv2.imwrite(save_path, im0)
         elif mode == 'video':
             im_save_path = save_path[:-4] + "_" + str(frame) + ".png"
             cv2.imwrite(im_save_path, im0)
-        """
-        # video로 save하는 코드 -> recognition 까지 완성한 후 delete? or 추가?
-        else:  # 'video'
-            if vid_path[i] != save_path:  # new video
-                vid_path[i] = save_path
-                if isinstance(vid_writer[i], cv2.VideoWriter):
-                    vid_writer[i].release()  # release previous video writer
-                if vid_cap:  # video
-                    fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                    w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                    h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                else:  # stream
-                    fps, w, h = 30, im0.shape[1], im0.shape[0]
-                save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-            vid_writer[i].write(im0)
-        """
 
     # Print detection results
     # s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if args.save_bbox else ''

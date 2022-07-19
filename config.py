@@ -24,23 +24,23 @@ def parse_training_args(parser):
     parser.add_argument('--data', type=str, default=ROOT / './detection/data/AD.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--detect_imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
 
-    parser.add_argument('--conf-thres', type=float, default=0.9, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
+    parser.add_argument('--conf_thres', type=float, default=0.9, help='confidence threshold')
+    parser.add_argument('--iou_thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
 
-    parser.add_argument('--save-bbox', default=False, help='save results to *.txt')
-    parser.add_argument('--save-conf', default=False, help='save confidences in --save-txt labels')
-    parser.add_argument('--save-crop', default=False, help='save cropped prediction boxes')
-    parser.add_argument('--save-detect-img', default=False, help='save detection images/videos')
+    parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
+    parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
+    parser.add_argument('--save_crop', default=False, help='save cropped prediction boxes')
+    parser.add_argument('--save_detect_img', default=False, help='save detection images/videos')
 
     # experiment parameter
-    parser.add_argument('--project', default=ROOT / 'runs/detect', help='save results to project/name')
+    parser.add_argument('--project', default=ROOT / 'detection_result', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', default=False, help='existing project/name ok, do not increment')
 
     # visualize
-    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
-    parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
+    parser.add_argument('--hide_labels', default=False, action='store_true', help='hide labels')
+    parser.add_argument('--hide_conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', default=False, help='use FP16 half-precision inference')
 
 
