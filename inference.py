@@ -84,11 +84,19 @@ def main():
     LOGGER.info("Load Network Weights Done!")
 
     ### Make Save Directories
-    RECOG_SAVE_DIR = args.save_dir + '/recognition/'
-    os.makedirs(RECOG_SAVE_DIR, exist_ok=True)
-    if args.save_bbox or args.save_detect_img:
-        DETECT_SAVE_DIR = args.save_dir + '/detection'
+    os.makedirs(args.save_dir, exist_ok=True)
+    exp_num = len(os.listdir(args.save_dir))
+    EXP_NAME = args.save_dir + 'exp' + str(exp_num).zfill(4)
+    os.makedirs(EXP_NAME, exist_ok=True)
+    if args.save_result_image:
+        RECOG_SAVE_DIR = EXP_NAME + '/recognition/'
+        DETECT_SAVE_DIR = EXP_NAME + '/detection/'
+        os.makedirs(RECOG_SAVE_DIR, exist_ok=True)
+        os.makedirs(DETECT_SAVE_DIR, exist_ok=True)
         os.makedirs(DETECT_SAVE_DIR + '/labels' if args.save_bbox else DETECT_SAVE_DIR, exist_ok=True)  # make dir
+    else:
+        RECOG_SAVE_DIR = None
+        DETECT_SAVE_DIR = None
 
     ### Load Datas
     ## Read source
@@ -109,12 +117,15 @@ def main():
         img_rec = img.permute(2, 0, 1) / 255 # HWC -> CHW
 
         recog_result = do_recognition(args, img_rec, bboxes, recognition_network, converter, device)
-        draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR,
-                    dataset, args, names, path, DETECT_SAVE_DIR)
+
+        if args.save_result_image:
+            draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR,
+                        dataset, args, names, path, DETECT_SAVE_DIR)
 
         frame_idx += 1
 
-    img2video(RECOG_SAVE_DIR, args.save_videoname)
+    if args.save_result_image and args.save_result_video:
+        img2video(EXP_NAME, RECOG_SAVE_DIR, args.save_videoname)
 
 
 def draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR, dataset, args, names, path, DETECT_SAVE_DIR):
@@ -142,14 +153,14 @@ def draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR, datas
 
         img = np.array(img_pil)
 
-    outname = RECOG_SAVE_DIR + str(frame_idx).zfill(3) + '.jpg'
+    outname = RECOG_SAVE_DIR + str(frame_idx+1).zfill(3) + '.jpg'
     cv2.imwrite(outname, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
-def img2video(frame_dir, video_name):
+def img2video(save_dir, frame_dir, video_name):
 
     if '.mp4' in video_name:
-        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     else:
         fourcc = 0
 
@@ -158,7 +169,7 @@ def img2video(frame_dir, video_name):
     frame = cv2.imread(os.path.join(frame_dir, frames[0]))
     height, width, layers = frame.shape
 
-    video = cv2.VideoWriter(video_name, fourcc, 24.0, (width, height))
+    video = cv2.VideoWriter(os.path.join(save_dir, video_name), fourcc, 24.0, (width, height))
     
     for frame in frames:
         video.write(cv2.imread(os.path.join(frame_dir, frame)))

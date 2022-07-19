@@ -18,9 +18,32 @@ def parse_training_args(parser):
         sys.path.append(str(ROOT))  # add ROOT to PATH
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+    # Session parameters
+    parser.add_argument('--gpu_num', type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=4)
+
+    # Source to test
+    parser.add_argument('--source', type=str, default='test1.mp4', help='file/dir/URL/glob, 0 for webcam')
+    parser.add_argument('--save_result_video', type=str2bool, default=False, help='wheter to save result video or not')
+    parser.add_argument('--save_result_image', type=str2bool, default=True, help='wheter to save result images or not')
+
+    # Saving parameters
+    parser.add_argument('--save_dir', type=str, default='inference_result/', help='directory to save image results')
+    parser.add_argument('--save_videoname', type=str, default='out.mp4', help='Output video name')
+
+    parser.add_argument('--hide_labels', default=False, action='store_true', help='hide labels')
+    parser.add_argument('--hide_conf', default=False, action='store_true', help='hide confidences')
+    parser.add_argument('--half', default=False, help='use FP16 half-precision inference')
+
+    parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
+    parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
+    parser.add_argument('--save_detect_img', default=True, help='save detection images/videos')
+
+    # Weights to load from
+    parser.add_argument('--weight_dir', type=str, default='weights/')
+
     # Detection Paramters
     parser.add_argument('--detect_weights', nargs='+', type=str, default=ROOT / './weights/best.pt', help='model path(s)')
-    parser.add_argument('--source', type=str, default='test1.mp4', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / './detection/data/AD.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--detect_imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
 
@@ -28,26 +51,13 @@ def parse_training_args(parser):
     parser.add_argument('--iou_thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
 
-    parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
-    parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
-    parser.add_argument('--save_detect_img', default=False, help='save detection images/videos')
-
-    # experiment parameter
-    parser.add_argument('--project', default='detection', help='save results to project/name')
-    parser.add_argument('--name', default='exp', help='save results to project/name')
-    parser.add_argument('--exist-ok', default=False, help='existing project/name ok, do not increment')
-
-    # visualize
-    parser.add_argument('--hide_labels', default=False, action='store_true', help='hide labels')
-    parser.add_argument('--hide_conf', default=False, action='store_true', help='hide confidences')
-    parser.add_argument('--half', default=False, help='use FP16 half-precision inference')
-
-
     # Recognition Paramters
     parser.add_argument('--imgH', type=int, default=64)
     parser.add_argument('--imgW', type=int, default=200)
     parser.add_argument('--batch_max_length', type=int, default=9, help='Max Length of Predicted Word (7 for chinense / 9 for korean)', choices=[7, 9])
     parser.add_argument('--pad_image', type=str2bool, default=False, help='Pad when resize')
+
+    parser.add_argument('--recognition_weight', type=str, default="recognition.pth")
 
     parser.add_argument('--Transformation', type=str, default='TPS', choices=['None', 'TPS'])
     parser.add_argument('--FeatureExtraction', type=str, default='ResNet', choices=['VGG, RCNN, ResNet'])
@@ -58,17 +68,6 @@ def parse_training_args(parser):
     parser.add_argument('--img_color', type=str, default='RGB', choices=['Gray', 'RGB'])
     parser.add_argument('--output_channel', type=int, default=512, help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
-
-    # Session parameters
-    parser.add_argument('--gpu_num', type=int, default=0)
-    parser.add_argument('--num_workers', type=int, default=4)
-
-    # Directory parameters
-    parser.add_argument('--data_dir', type=str, default="./road_driving.mp4/")
-    parser.add_argument('--weight_dir', type=str, default='weights/')
-    parser.add_argument('--save_dir', type=str, default='inference_result/')
-    parser.add_argument('--save_videoname', type=str, default='out.MP4')
-    parser.add_argument('--recognition_weight', type=str, default="recognition.pth")
 
 def parse_args():
     """Initializes a parser and reads the command line parameters.

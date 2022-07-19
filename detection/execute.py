@@ -71,10 +71,10 @@ def save_detection_result(args, det, names, p, mode, frame, imc, save_dir):
     # Save results (image with detections)
     if args.save_detect_img:
         if mode == 'image':
-            cv2.imwrite(save_path, im0)
+            cv2.imwrite(save_path, cv2.cvtColor(im0, cv2.COLOR_RGB2BGR))
         elif mode == 'video':
-            im_save_path = save_path[:-4] + "_" + str(frame) + ".png"
-            cv2.imwrite(im_save_path, im0)
+            im_save_path = save_path[:-4] + "_" + str(frame) + ".jpg"
+            cv2.imwrite(im_save_path, cv2.cvtColor(im0, cv2.COLOR_RGB2BGR))
 
     # Print detection results
     # s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if args.save_bbox else ''
