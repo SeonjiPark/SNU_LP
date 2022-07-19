@@ -30,11 +30,10 @@ def parse_training_args(parser):
 
     parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
     parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
-    parser.add_argument('--save_crop', default=False, help='save cropped prediction boxes')
     parser.add_argument('--save_detect_img', default=False, help='save detection images/videos')
 
     # experiment parameter
-    parser.add_argument('--project', default=ROOT / 'detection_result', help='save results to project/name')
+    parser.add_argument('--project', default='detection', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', default=False, help='existing project/name ok, do not increment')
 

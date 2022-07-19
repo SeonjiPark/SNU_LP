@@ -1,4 +1,4 @@
-import cv2
+import cv2, os
 import torch
 import numpy as np
 from pathlib import Path
@@ -47,8 +47,8 @@ def do_detect(args, detection_network, img, img_size, stride, auto):
 
 def save_detection_result(args, det, names, p, mode, frame, imc, save_dir):
     p = Path(p)  # to Path
-    save_path = str(save_dir / p.name)  # im.jpg
-    txt_path = str(save_dir / 'labels' / p.stem) + ('' if mode == 'image' else f'_{frame}')  # im.txt
+    save_path = os.path.join(save_dir, p.name)  # im.jpg
+    txt_path = os.path.join(save_dir, 'labels', p.stem) + ('' if mode == 'image' else f'_{frame}')  # im.txt
     gn = torch.tensor(imc.shape)[[1, 0, 1, 0]]  # normalization gain whwh
     annotator = Annotator(imc, line_width=3, example=str(names))
 
@@ -60,12 +60,10 @@ def save_detection_result(args, det, names, p, mode, frame, imc, save_dir):
             with open(txt_path + '.txt', 'a') as f:
                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-        if args.save_detect_img or args.save_crop:  # Add bbox to image
+        if args.save_detect_img:  # Add bbox to image
             c = int(cls)  # integer class
             label = None if args.hide_labels else (names[c] if args.hide_conf else f'{names[c]} {conf:.2f}')
             annotator.box_label(xyxy, label, color=colors(c, True))
-            if args.save_crop:
-                save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
     # Stream results
     im0 = annotator.result()

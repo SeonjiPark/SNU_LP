@@ -83,10 +83,12 @@ def main():
 
     LOGGER.info("Load Network Weights Done!")
 
-    ### check detection Directories
+    ### Make Save Directories
+    RECOG_SAVE_DIR = args.save_dir + '/recognition/'
+    os.makedirs(RECOG_SAVE_DIR, exist_ok=True)
     if args.save_bbox or args.save_detect_img:
-        detect_save_dir = increment_path(Path(args.project) / args.name, exist_ok=args.exist_ok)  # increment run
-        (detect_save_dir / 'labels' if args.save_bbox else detect_save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+        DETECT_SAVE_DIR = args.save_dir + '/detection'
+        os.makedirs(DETECT_SAVE_DIR + '/labels' if args.save_bbox else DETECT_SAVE_DIR, exist_ok=True)  # make dir
 
     ### Load Datas
     ## Read source
@@ -107,23 +109,21 @@ def main():
         img_rec = img.permute(2, 0, 1) / 255 # HWC -> CHW
 
         recog_result = do_recognition(args, img_rec, bboxes, recognition_network, converter, device)
-        draw_result(img, preds, recog_result, font, frame_idx, args.save_dir,
-                    dataset, args, names, path, detect_save_dir)
+        draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR,
+                    dataset, args, names, path, DETECT_SAVE_DIR)
 
         frame_idx += 1
 
-    img2video(args.save_dir, args.save_videoname)
+    img2video(RECOG_SAVE_DIR, args.save_videoname)
 
 
-def draw_result(img, preds, recog_result, font, frame_idx, SAVE_DIR, dataset, args, names, path, detect_save_dir):
+def draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR, dataset, args, names, path, DETECT_SAVE_DIR):
     img = np.asarray(img.to("cpu"))
     bboxes = preds[:, :4]
 
     if args.save_bbox or args.save_detect_img:
         frame = getattr(dataset, 'frame', 0)
-        save_detection_result(args, preds, names, path, dataset.mode, frame, img.copy(), detect_save_dir)
-
-    os.makedirs(SAVE_DIR, exist_ok=True)
+        save_detection_result(args, preds, names, path, dataset.mode, frame, img.copy(), DETECT_SAVE_DIR)
 
     bbox_num = len(bboxes)
 
@@ -142,7 +142,7 @@ def draw_result(img, preds, recog_result, font, frame_idx, SAVE_DIR, dataset, ar
 
         img = np.array(img_pil)
 
-    outname = SAVE_DIR + str(frame_idx).zfill(3) + '.jpg'
+    outname = RECOG_SAVE_DIR + str(frame_idx).zfill(3) + '.jpg'
     cv2.imwrite(outname, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
