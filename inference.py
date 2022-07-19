@@ -4,6 +4,7 @@ import numpy as np
 from PIL import ImageFont, ImageDraw, Image
 import sys
 from pathlib import Path
+from time import time
 
 import torch
 import torch.nn.functional as F
@@ -20,7 +21,7 @@ os.chdir(os.getcwd() + "/detection")
 sys.path.append(os.getcwd())
 
 from detection.utils.datasets import LoadImages
-from detection.utils.general import LOGGER, colorstr, increment_path
+from detection.utils.general import colorstr, increment_path
 from detection.execute import preprocess_img, do_detect, save_detection_result, build_detect_model
 os.chdir(SAVE_CWD)
 
@@ -81,7 +82,7 @@ def main():
         detection_network.eval()
         recognition_network.eval()
 
-    LOGGER.info("Load Network Weights Done!")
+    print("Load Network Weights Done!")
 
     ### Make Save Directories
     os.makedirs(args.save_dir, exist_ok=True)
@@ -93,7 +94,7 @@ def main():
         DETECT_SAVE_DIR = EXP_NAME + '/detection/'
         os.makedirs(RECOG_SAVE_DIR, exist_ok=True)
         os.makedirs(DETECT_SAVE_DIR, exist_ok=True)
-        os.makedirs(DETECT_SAVE_DIR + '/labels' if args.save_bbox else DETECT_SAVE_DIR, exist_ok=True)  # make dir
+        os.makedirs(DETECT_SAVE_DIR + '/labels' if args.save_bbox else DETECT_SAVE_DIR, exist_ok=True)
     else:
         RECOG_SAVE_DIR = None
         DETECT_SAVE_DIR = None
@@ -105,28 +106,42 @@ def main():
 
     ### start inference
     frame_idx = 0
+    time_line = [0.0, 0.0, 0.0, 0.0, 0.0] # GPU_load, do_detect, do_recog, draw_result, img2video
     for path, img0, cap, s, img_size, stride, auto in dataset:
         # img [H, W, C], 0~255 normalized
+        start = time()
         img = torch.from_numpy(img0).to(device)
+        time_line[0] += time() - start
 
         # Do Detection Inference
+        start = time()
         preds = do_detect(args, detection_network, img, img_size, stride, auto)
+        time_line[1] += time() - start
         bboxes = preds[:, :4]  # bbox = [pred_num, 4]    [x1, y1, x2, y2]    ([] if failed to pred, not normalized)
 
         img = img[:, :, [2, 1, 0]]  # RGB -> BGR
         img_rec = img.permute(2, 0, 1) / 255 # HWC -> CHW
 
+        start = time()
         recog_result = do_recognition(args, img_rec, bboxes, recognition_network, converter, device)
+        time_line[2] += time() - start
 
         if args.save_result_image:
+            start = time()
             draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR,
                         dataset, args, names, path, DETECT_SAVE_DIR)
+            time_line[3] += time() - start
 
         frame_idx += 1
 
     if args.save_result_image and args.save_result_video:
-        img2video(EXP_NAME, RECOG_SAVE_DIR, args.save_videoname)
+        start = time()
+        img2video(EXP_NAME, RECOG_SAVE_DIR, args.save_videoname, dataset.fps)
+        time_line[4] += time() - start
 
+    print(f'Total inference time is {sum(time_line[:5]):.3f} s, with {frame_idx} frames')
+    print(f'Inference time per frame is {sum(time_line[:3]) / frame_idx:.3f}s = (GPU load {time_line[0]/frame_idx:.3f}s) + (Detection {time_line[1]/frame_idx:.3f}s) + (Recognition {time_line[2]/frame_idx:.3f}s)')
+    print(f'Saving image results takes {time_line[3] / frame_idx:.3f}s per frame, and saving video result takes {time_line[4]:.3f}s')
 
 def draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR, dataset, args, names, path, DETECT_SAVE_DIR):
     img = np.asarray(img.to("cpu"))
@@ -157,7 +172,7 @@ def draw_result(img, preds, recog_result, font, frame_idx, RECOG_SAVE_DIR, datas
     cv2.imwrite(outname, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
 
-def img2video(save_dir, frame_dir, video_name):
+def img2video(save_dir, frame_dir, video_name, fps):
 
     if '.mp4' in video_name:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -169,7 +184,7 @@ def img2video(save_dir, frame_dir, video_name):
     frame = cv2.imread(os.path.join(frame_dir, frames[0]))
     height, width, layers = frame.shape
 
-    video = cv2.VideoWriter(os.path.join(save_dir, video_name), fourcc, 24.0, (width, height))
+    video = cv2.VideoWriter(os.path.join(save_dir, video_name), fourcc, fps, (width, height))
     
     for frame in frames:
         video.write(cv2.imread(os.path.join(frame_dir, frame)))

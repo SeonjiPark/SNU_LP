@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from pathlib import Path
 
-from utils.general import  non_max_suppression, scale_coords, check_img_size, xyxy2xywh
+from utils.general import non_max_suppression, scale_coords, check_img_size, xyxy2xywh
 from utils.augmentations import letterbox
 from utils.plots import Annotator, colors, save_one_box
 

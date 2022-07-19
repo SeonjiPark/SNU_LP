@@ -199,6 +199,7 @@ class LoadImages:
         self.video_flag = [False] * ni + [True] * nv
         self.mode = 'image'
         self.auto = auto
+        self.fps = 24.0
         if any(videos):
             self.new_video(videos[0])  # new video
         else:
@@ -218,6 +219,7 @@ class LoadImages:
         if self.video_flag[self.count]:
             # Read video
             self.mode = 'video'
+            self.fps = self.cap.get(cv2.CAP_PROP_FPS)
             ret_val, img0 = self.cap.read()
             while not ret_val:
                 self.count += 1
@@ -233,6 +235,7 @@ class LoadImages:
             s = f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: '
 
         else:
+            self.fps = 24.0
             # Read image
             self.count += 1
             img0 = cv2.imread(path)  # BGR
