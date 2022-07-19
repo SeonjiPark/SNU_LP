@@ -28,9 +28,9 @@ Z 서버에서 SHARE안에 teset dataset 있음
                 └──> label.txt : 적절한 입력 포멧으로 변형한 검증 레이블
     |── SNU_LP
         ├──> detections : detection용 train, test, inference.py
-        ├──> runs (inference.py 실행시 생김)
-            ├──> detect 
-                ├──> exp
+        ├──> inference_result (inference.py 실행시 생김)
+            ├──> recognition 
+            ├──> detection (save_bbox or save_detect_img를 True로 줄시 생김)
                     └──> labels : 이미지에 대한 실행 결과 (bbox, confidence를 저장)
                 ├── 실행 결과 이미지 (bbox, confidence 포함)
         ├──> models : detection yolov5 layers
@@ -55,7 +55,7 @@ Z 서버에서 SHARE안에 teset dataset 있음
 추가 예정
 
 ## === Inference ===
-python inference.py --source ./road_driving.mp4 --save-bbox True --device 0
+python inference.py --source ./road_driving.mp4 --device 0
 
 inference 실행 시 디폴트는 이미지 저장 O, txt는 저장 X
 위와 같이 --save-bbox 를 추가하면 bbox를 txt로 저장함. 
@@ -67,8 +67,6 @@ image : [H, W, C] 원본 이미지. 사이즈는 원본 사이즈 그대로, 0~2
 
 bboxes : [pred_num, 4] 해당 이미지에서 predict한 bbox. normalized 하지 않은 [x1, y1, x2, y2]
 
-confs : confidence float 값
-
 
 ### 주의 : bbox txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. (return 값과 다름)
 
@@ -79,12 +77,10 @@ confs : confidence float 값
 
 --source 인풋 이미지 폴더명 or 파일명 (동영상 가능)
 
---save-bbox : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
+--save_bbox : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
 
---save-conf : 플래그로 줄 시 runs 안에 bbox.txt에 conf 추가
+--save_conf : 플래그로 줄 시 runs 안에 bbox.txt에 conf 추가
 
---nosave : 플래그로 줄 시 이미지 저장 X 
-
---detect_imgsz : int로 주기 가능. default는 640
+--save_detect_img : 플래그로 줄 시 detection 이미지 저장 O 
 
 --conf_thres : float로 주기 가능. default는 0.9 
