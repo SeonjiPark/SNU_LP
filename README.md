@@ -9,58 +9,45 @@ git clone https://github.com/SeonjiPark/SNU_LP.git
 
 cd SNU_LP
 
-conda create -n SNU_LP python=3.7
-
-conda activate SNU_LP
-
+```
+conda create -n ENV_NAME python=3.7
+conda activate ENV_NAME
 pip install -r requirements.txt
-
-# Dataset
-Z 서버에서 SHARE안에 teset dataset 있음
+```
 
 # Directory 설명
-    |── datasets
-                ├──> train
-                ├──> images : 학습 이미지가 저장되야 하는 폴더
-                └──> label.txt : 적절한 입력 포멧으로 변형한 학습 레이블
-            ├──> val
-                ├──> images : 검증 이미지가 저장되야 하는 폴더
-                └──> label.txt : 적절한 입력 포멧으로 변형한 검증 레이블
-    |── SNU_LP
-        ├──> detections : detection용 train, test, inference.py
-        ├──> inference_result (inference.py 실행시 생김)
-            ├──> recognition 
-            ├──> detection (save_bbox or save_detect_img를 True로 줄시 생김)
-                    └──> labels : 이미지에 대한 실행 결과 (bbox, confidence를 저장)
-                ├── 실행 결과 이미지 (bbox, confidence 포함)
-        ├──> models : detection yolov5 layers
-        ├──> weights
-            ├──> AD_15_E300_scratch_anchor_ver1 : 중복파일 (삭제예정)
-            ├── best.pt : 현재 best ckpt
-            ├── yolov5s.pt : yolov5 pretrained ckpt (삭제예정?)
+    |── detection : detection 관련 코드
+    |── recognition : recognition 관련 코드
+    |── weights : pretrained detection & recognition weight들 저장
+    |── config.py : 입력 arugment 를 관리하는 파일
+    |── gulim.ttc : 한글 출력을 위한 폰트
+    └──> inference.py : inference 용 코드 (GT label이 없는 경우)
 
-        |── utils : 다양한 기타 사용 함수들 폴더
-        |── config.py : 입력 argument를 관리하는 파일
-        |── inference.py : inference용 코드 (GT label이 없을 경우 테스트)
-        |── requirements.txt : 가상환경 파일
+## === 학습된 ckpt ===
+아래 링크에서 미리 학습된 ckpt 파일을 다운 받아 weights 폴더에 배치
 
-
-# 코드 실행 가이드 라인
-
-
-## === Train ===
-추가 예정
-
-## === Test ===
-추가 예정
+구글 드라이브 주소 : XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ## === Inference ===
-python inference.py --source ./road_driving.mp4 --device 0
+```
+python inference.py --gpu_num=0 --source='test.mp4' --save_result_image=True --save_result_video=True --save_dir='inference_result/' --save_videoname='out.mp4'
+```
 
-inference 실행 시 디폴트는 이미지 저장 O, txt는 저장 X
-위와 같이 --save-bbox 를 추가하면 bbox를 txt로 저장함. 
+Argument 설명
 
+--source : 인풋 이미지 폴더명 or 파일명 (동영상 가능)
 
+--save_result_image : detection & recognition 결과 이미지로 저장할지 여부
+
+--save_result_video : detection & recognition 결과 동영상으로 저장할지 여부 (save_result_image=True 인 경우만 가능)
+
+--save_dir : Inference 결과 저장할 폴더
+
+-save_videoname : 저장할 Video 제목
+
+ 
+
+## === Code 내부에서 return 하는 것 ===
 code 내부에서 return 하는 것 
 
 image : [H, W, C] 원본 이미지. 사이즈는 원본 사이즈 그대로, 0~255 normalize 
@@ -69,18 +56,3 @@ bboxes : [pred_num, 4] 해당 이미지에서 predict한 bbox. normalized 하지
 
 
 ### 주의 : bbox txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. (return 값과 다름)
-
-
-알아둬야 할 config 설명
-
---detect_weights weights/best.pt 로 고정
-
---source 인풋 이미지 폴더명 or 파일명 (동영상 가능)
-
---save_bbox : 플래그로 줄 시 runs 안에 class와 bbox를 txt로 저장
-
---save_conf : 플래그로 줄 시 runs 안에 bbox.txt에 conf 추가
-
---save_detect_img : 플래그로 줄 시 detection 이미지 저장 O 
-
---conf_thres : float로 주기 가능. default는 0.9 
