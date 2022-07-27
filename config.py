@@ -31,13 +31,13 @@ def parse_training_args(parser):
     parser.add_argument('--save_dir', type=str, default='inference_result/', help='directory to save image results')
     parser.add_argument('--save_videoname', type=str, default='out.mp4', help='Output video name')
 
-    parser.add_argument('--hide_labels', default=False, action='store_true', help='hide labels')
-    parser.add_argument('--hide_conf', default=False, action='store_true', help='hide confidences')
+    parser.add_argument('--hide_labels', default=False, type=str2bool, help='hide labels')
+    parser.add_argument('--hide_conf', default=False, type=str2bool, help='hide confidences')
     parser.add_argument('--half', default=False, help='use FP16 half-precision inference')
 
-    parser.add_argument('--save_bbox', default=False, help='save results to *.txt')
-    parser.add_argument('--save_conf', default=False, help='save confidences in --save-txt labels')
-    parser.add_argument('--save_detect_img', default=False, help='save detection images/videos')
+    parser.add_argument('--save_bbox', type=str2bool, default=False, help='save results to *.txt')
+    parser.add_argument('--save_conf', type=str2bool, default=False, help='save confidences in --save-txt labels')
+    parser.add_argument('--save_detect_img', type=str2bool, default=True, help='save detection images/videos')
 
     # Weights to load from
     parser.add_argument('--weight_dir', type=str, default='weights/')
