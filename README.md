@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ## === 학습된 ckpt ===
 아래 링크에서 미리 학습된 ckpt 파일을 다운 받아 weights 폴더에 배치
 
-구글 드라이브 주소 : XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+구글 드라이브 주소 : https://drive.google.com/drive/folders/112Lt3OqficYWn61HwqbJQmm7DIkGPkfA?usp=sharing
 
 ## === Inference ===
 ```
