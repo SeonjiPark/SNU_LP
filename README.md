@@ -45,6 +45,16 @@ Argument 설명
 
 -save_videoname : 저장할 Video 제목
 
+
+
+[detection 결과 저장 관련 arg]
+
+--save_detect_img: detection 결과 이미지를 저장할지 여부 (save_result_image=True일때만 가능, default=True)
+
+--save_bbox: detection 결과 bbox를 txt로 저장할지 여부 (save_result_image=True일때만 가능, default=False)
+
+#### 주의 : bbox txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. (return 값과 다름)
+
  
 
 ## === Code 내부에서 return 하는 것 ===
@@ -54,5 +64,3 @@ image : [H, W, C] 원본 이미지. 사이즈는 원본 사이즈 그대로, 0~2
 
 bboxes : [pred_num, 4] 해당 이미지에서 predict한 bbox. normalized 하지 않은 [x1, y1, x2, y2]
 
-
-### 주의 : bbox txt 파일에는 normalize된 center_x, center_y, w, h가 저장됨. (return 값과 다름)
