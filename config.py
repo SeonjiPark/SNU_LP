@@ -43,7 +43,7 @@ def parse_training_args(parser):
     parser.add_argument('--weight_dir', type=str, default='weights/')
 
     # Detection Paramters
-    parser.add_argument('--detect_weights', nargs='+', type=str, default=ROOT / './weights/best.pt', help='model path(s)')
+    parser.add_argument('--detect_weights', nargs='+', type=str, default=ROOT / './weights/detection.pt', help='model path(s)')
     parser.add_argument('--data', type=str, default=ROOT / './detection/data/AD.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--detect_imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
 
