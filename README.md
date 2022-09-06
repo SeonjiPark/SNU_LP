@@ -2,7 +2,7 @@
 
 # Dataset Directory 설명
 
-1. CCPD (중국 번호판)
+# CCPD (중국 번호판)
     |── CCPD2019 |── ccpd_base - images
                  |── ccpd_blur
                  |── ccpd_challenge
@@ -14,7 +14,7 @@
                  |── ccpd_weather
                  └──> splits - ccpd_blur.txt, ccpd_challenge.txt, test.txt, val.txt, train.txt ....
 
-2. KorLP (한국 번호판)
+# KorLP (한국 번호판)
     |── KorLP |── Training    |── image - images
                               └──> label -labels
               └──> Validation |── image - images
