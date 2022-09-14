@@ -32,7 +32,9 @@ pip install -r requirements.txt
 ```
 python detect.py
 ```
-#### => 실행시 {inference_result/입력파일이름}  폴더가 생성되며, 내부에 inference 결과 이미지 및 detection_bbox.txt 파일을 
+#### => 실행시 {inference_result/입력파일이름}  폴더가 생성되며, 내부에 inference 결과 이미지 및 detection_bbox.txt 파일을 저장함
+
+
 ### [Argument (detect.cfg) 설명]
 
 
@@ -59,6 +61,7 @@ ex. output_dir = inference_result로 설정할 시 아래와 같이 결과 폴�
 
 
 
+
 ### [detection 결과 저장 관련 arg]
 
 
@@ -71,6 +74,7 @@ hide_labels = detection 결과 이미지에서 label("LP" = License Plate)를 �
 hide_conf = detection 결과 이미지에서 confidence 값을 출력하지 않을지 여부
 
 save_conf = detection 결과 txt에서 confidence값을 출력하지 않을지 여부
+
 
 
 
