@@ -32,7 +32,7 @@ pip install -r requirements.txt
 ```
 python detect.py
 ```
-
+#### => 실행시 {inference_result/입력파일이름}  폴더가 생성되며, 내부에 inference 결과 이미지 및 detection_bbox.txt 파일을 
 ### [Argument (detect.cfg) 설명]
 
 
