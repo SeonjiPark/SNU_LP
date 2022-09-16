@@ -74,8 +74,8 @@ class Annotator:
         if self.pil:  # use PIL
             self.im = im if isinstance(im, Image.Image) else Image.fromarray(im)
             self.draw = ImageDraw.Draw(self.im)
-            self.font = check_pil_font(font='Arial.Unicode.ttf' if non_ascii else font,
-                                       size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))
+            self.font = check_pil_font(font=font if non_ascii else font,
+                                       size=font_size or max(round(sum(self.im.size) / 2 * 0.035), 12))            
         else:  # use cv2
             self.im = im
         self.lw = line_width or max(round(sum(im.shape) / 2 * 0.003), 2)  # line width
@@ -93,7 +93,7 @@ class Annotator:
                     fill=color,
                 )
                 # self.draw.text((box[0], box[1]), label, fill=txt_color, font=self.font, anchor='ls')  # for PIL>8.0
-                self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font)
+                self.draw.text((box[0], box[1] - h if outside else box[1]), label, fill=txt_color, font=self.font) 
         else:  # cv2
             p1, p2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
             cv2.rectangle(self.im, p1, p2, color, thickness=self.lw, lineType=cv2.LINE_AA)
