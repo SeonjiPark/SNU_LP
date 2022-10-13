@@ -24,7 +24,9 @@ pip install -r requirements.txt
     └──> inference.py : inference 용 코드 (GT label이 없는 경우)
 
 ## === 학습된 ckpt ===
-아래 링크에서 미리 학습된 ckpt 파일을 다운 받아 weights 폴더에 배치
+아래 링크에서 미리 학습된 ckpt(recognition.pth) 파일을 다운 받아 weights 폴더에 배치
+
+(ckpt_best_CCPD.pth는 자율주행 데이터셋이 아닌 다른 official dataset (CCPD2019)에 대해 학습한 결과)
 
 구글 드라이브 주소 : https://drive.google.com/drive/folders/112Lt3OqficYWn61HwqbJQmm7DIkGPkfA?usp=sharing
 
