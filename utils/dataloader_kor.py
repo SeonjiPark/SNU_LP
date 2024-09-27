@@ -71,11 +71,16 @@ class KorLP_Recognition_Dataset(Dataset):
 
     def __getitem__(self, index):
         img_name = os.path.join(self.img_dir, self.subset, 'image', self.img_paths[index])
+        print(img_name)
         
         if self.img_color == 'Gray':
             img = cv2.cvtColor(cv2.imread(img_name), cv2.COLOR_BGR2GRAY)
         elif self.img_color == 'RGB':
             img = cv2.cvtColor(cv2.imread(img_name), cv2.COLOR_BGR2RGB)
+            
+        # Gaussian Noise Augmentation
+        noise = np.random.normal(0, 25, img.shape).astype(np.uint8)  # 평균 0, 표준편차 25인 노이즈 생성
+        img = cv2.add(img, noise)  # 이미지에 노이즈 추가
 
         # Text Label
         label = self.labels[index]

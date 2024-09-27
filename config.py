@@ -24,7 +24,7 @@ def parse_training_args(parser):
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
 
     # Session parameters
-    parser.add_argument('--gpu_num', type=int, default=3)
+    parser.add_argument('--gpu_num', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--epochs', type=int, default=20000)

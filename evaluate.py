@@ -58,6 +58,7 @@ def eval(network, test_dataloader, device, converter, BATCH_MAX_LENGTH):
             preds_size = torch.IntTensor([preds.size(1)] * BATCH_SIZE)
             _, preds_index = preds.max(2)
             decoded = converter.decode(preds_index, preds_size)
+            print(f"GT: {labels}, preds: {decoded}")
             
             for idx in range(BATCH_SIZE):
                 if labels[idx] == decoded[idx]:
@@ -139,6 +140,24 @@ if __name__ == '__main__':
             drop_last=False,
             collate_fn=Collate
         )            
+        
+    else:
+        # Set up Dataset
+        converter = CTCLabelConverter(kor_chars)
+        args.num_class = len(converter.character)
+
+        test_dataset = KorLP_Recognition_Dataset(DATA_DIR, 'Validation', IMG_COLOR)
+        Collate = AlignCollate(IMGH, IMGW, PAD)
+
+        test_dataloader = DataLoader(
+            dataset=test_dataset,
+            batch_size=BATCH_SIZE,
+            num_workers=NUM_WORKERS,
+            shuffle=False,
+            drop_last=False,
+            collate_fn=Collate
+        )            
+
 
     # Set up GPU
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
@@ -158,3 +177,4 @@ if __name__ == '__main__':
     test_acc, correct_sample, total_samples, avg_distance = eval(network, test_dataloader, device, converter, BATCH_MAX_LENGTH)
 
     logging.info('====== Evaluation Accuracy : %.1f  [%d/%d]   Edit Distance : %.2f' % (test_acc*100, correct_sample, total_samples, avg_distance))
+    print('====== Evaluation Accuracy : %.1f  [%d/%d]   Edit Distance : %.2f' % (test_acc*100, correct_sample, total_samples, avg_distance))
