@@ -1,5 +1,5 @@
 import torch.nn.init as init
-
+import torch
 import os
 import numpy as np
   
@@ -51,3 +51,26 @@ def decode_province(text, province, province_replace):
         if prov in text:
             text = text.replace(prov, province[idx])
     return text
+
+def enhance_edges(imgs, edge_amount):
+    sobel_x = torch.Tensor([[[-1, 0, 1], 
+                             [-2, 0, 2], 
+                             [-1, 0, 1]]]).to(imgs.device)
+
+    sobel_y = torch.Tensor([[[-1, -2, -1], 
+                             [ 0,  0,  0], 
+                             [ 1,  2,  1]]]).to(imgs.device)
+
+    sobel_x = sobel_x.expand(imgs.size(1), 1, 3, 3)
+    sobel_y = sobel_y.expand(imgs.size(1), 1, 3, 3)
+
+    edges_x = torch.nn.functional.conv2d(imgs, sobel_x, padding=1, groups=imgs.size(1))
+    edges_y = torch.nn.functional.conv2d(imgs, sobel_y, padding=1, groups=imgs.size(1))
+    
+    edges = torch.sqrt(edges_x ** 2 + edges_y ** 2)
+    
+    enhanced_imgs = imgs + edge_amount*edges
+    
+    enhanced_imgs = (enhanced_imgs - enhanced_imgs.min()) / (enhanced_imgs.max() - enhanced_imgs.min())
+
+    return enhanced_imgs

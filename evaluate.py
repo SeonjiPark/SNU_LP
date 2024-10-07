@@ -35,38 +35,31 @@ kor_chars = kor_chars + province_replace
 
 
 def eval(network, test_dataloader, device, converter, BATCH_MAX_LENGTH):
-
     total_samples = 0
     correct_sample = 0
     avg_distance = 0
 
     with torch.no_grad():
         network.eval()
-
         for batch_idx, data in enumerate(tqdm(test_dataloader)):
-
             imgs, labels = data
             texts, lengths = converter.encode(labels, batch_max_length=BATCH_MAX_LENGTH, device=device)
 
             BATCH_SIZE = imgs.size(0)
-
-            # Data to cuda
+            imgs = imgs.to(torch.float32)
             imgs = imgs.to(device)
-            
             preds = network(imgs, texts)
 
             preds_size = torch.IntTensor([preds.size(1)] * BATCH_SIZE)
             _, preds_index = preds.max(2)
             decoded = converter.decode(preds_index, preds_size)
-            
+
             for idx in range(BATCH_SIZE):
                 if labels[idx] == decoded[idx]:
                     correct_sample += 1
-
                 avg_distance += edit_distance(labels[idx], decoded[idx])
-
                 total_samples += 1
-        
+
         total_accuracy = correct_sample / total_samples
         avg_distance /= total_samples
 
@@ -99,10 +92,10 @@ if __name__ == '__main__':
 
     # Set up logger
     filename = os.path.join(LOG_DIR, 'logs_eval.txt')
-    logging.basicConfig(filename=filename,format='[%(levelname)s] %(asctime)s %(message)s')
+    logging.basicConfig(filename=filename, format='[%(levelname)s] %(asctime)s %(message)s')
     logging.getLogger().setLevel(logging.INFO)
 
-    for key,value in sorted((args.__dict__).items()):
+    for key, value in sorted((args.__dict__).items()):
         print('\t%15s:\t%s' % (key, value))
         logging.info('\t%15s:\t%s' % (key, value))
 
@@ -123,7 +116,7 @@ if __name__ == '__main__':
             collate_fn=Collate
         )    
 
-    elif 'Kor' in DATA_DIR:
+    elif 'Kor' in DATA_DIR or 'kamo_lp_80' in DATA_DIR:
         # Set up Dataset
         converter = CTCLabelConverter(kor_chars)
         args.num_class = len(converter.character)
@@ -138,11 +131,28 @@ if __name__ == '__main__':
             shuffle=False,
             drop_last=False,
             collate_fn=Collate
-        )            
+        )
+
+    else:
+        # Set up Dataset
+        converter = CTCLabelConverter(kor_chars)
+        args.num_class = len(converter.character)
+
+        test_dataset = KorLP_Recognition_Dataset(DATA_DIR, 'Validation', IMG_COLOR)
+        Collate = AlignCollate(IMGH, IMGW, PAD)
+
+        test_dataloader = DataLoader(
+            dataset=test_dataset,
+            batch_size=BATCH_SIZE,
+            num_workers=NUM_WORKERS,
+            shuffle=False,
+            drop_last=False,
+            collate_fn=Collate
+        )              
 
     # Set up GPU
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(GPU_NUM)
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")    
 
     # Network declare
@@ -155,6 +165,9 @@ if __name__ == '__main__':
     network.load_state_dict(checkpoint['network'])
     logging.info('Recover completed.')
 
+    # 평가 수행
     test_acc, correct_sample, total_samples, avg_distance = eval(network, test_dataloader, device, converter, BATCH_MAX_LENGTH)
 
-    logging.info('====== Evaluation Accuracy : %.1f  [%d/%d]   Edit Distance : %.2f' % (test_acc*100, correct_sample, total_samples, avg_distance))
+    # 로그에 최종 결과 기록
+    logging.info('====== Evaluation Accuracy : %.1f  [%d/%d]   Edit Distance : %.2f' % (test_acc * 100, correct_sample, total_samples, avg_distance))
+    print(f"====== Evaluation Accuracy : {test_acc * 100:.1f}%  [{correct_sample}/{total_samples}]   Edit Distance: {avg_distance:.2f}")

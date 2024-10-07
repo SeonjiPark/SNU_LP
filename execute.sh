@@ -1,0 +1,3 @@
+CUDA_VISIBLE_DEVICES=2 python train_kor_fix1_edge.py --data_dir "../DATASET/KorLP" --experiment_name "train10" --add_noise --add_edge --noise_var 0.05 --noise_amount 0.5
+CUDA_VISIBLE_DEVICES=2 python train_kor_finetune_kamo.py --best_weights "ckpt_finetune1.pth" --data_dir "../DATASET/kamo_lp_80" --batch_size 8   --experiment_name "train10" 
+CUDA_VISIBLE_DEVICES=2 python evaluate.py --data_dir "../DATASET/kamo_lp_80" --best_weights "ckpt_finetune1.pth"  --experiment_name "train10" 

@@ -27,7 +27,7 @@ def parse_training_args(parser):
     parser.add_argument('--gpu_num', type=int, default=3)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--epochs', type=int, default=20000)
+    parser.add_argument('--epochs', type=int, default=200)
 
     parser.add_argument('--optim_type', type=str, default='Adam', choices=['Adam', 'Adadelta'])
     parser.add_argument('--lr', type=float, default=1e-4)
@@ -42,13 +42,19 @@ def parse_training_args(parser):
     parser.add_argument('--eval_every', type=int, default=1)
 
     # Directory parameters
-    parser.add_argument('--data_dir', type=str, default="../DATASET/KorLP/")
+    parser.add_argument('--data_dir', type=str, default="./DATASET/KorLP/")
     parser.add_argument('--experiment_name', type=str, default='default/')
     parser.add_argument('--ckpt_dir', type=str, default="ckpt/")
     parser.add_argument('--log_dir', type=str, default="log/")
     parser.add_argument('--weights', type=str, default="ckpt.pth")
     parser.add_argument('--best_weights', type=str, default="ckpt_best.pth")
-
+    
+    parser.add_argument('--add_edge', action='store_true')
+    parser.add_argument('--add_noise', action='store_true')
+    parser.add_argument('--noise_var',  type=float, default=0.05)
+    parser.add_argument('--noise_amount',  type=float, default=0.1)
+    parser.add_argument('--edge_amount',  type=float, default=0.01)
+    
 def parse_args():
     """Initializes a parser and reads the command line parameters.
 

@@ -6,8 +6,6 @@ import numpy as np
 import os
 import sys
 import json
-import random
-from skimage.util import random_noise
 
 sys.path.append('.')
 from utils.datatransformer import *
@@ -32,16 +30,13 @@ chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '가', '거', '고', 
 chars = chars + province_replace
 
 class KorLP_Recognition_Dataset(Dataset):
-    def __init__(self, img_dir, subset, img_color, add_noise=False, noise_var=0.05, noise_amount=0.1):
+    def __init__(self, img_dir, subset, img_color):
 
         assert (subset == 'Training') or (subset == 'Validation')
 
         self.img_dir = img_dir
         self.img_color = img_color
         self.subset = subset
-        self.add_noise = add_noise
-        self.noise_var = noise_var
-        self.noise_amount = noise_amount
 
         # Read Label path
         label_path = []
@@ -81,21 +76,11 @@ class KorLP_Recognition_Dataset(Dataset):
             img = cv2.cvtColor(cv2.imread(img_name), cv2.COLOR_BGR2GRAY)
         elif self.img_color == 'RGB':
             img = cv2.cvtColor(cv2.imread(img_name), cv2.COLOR_BGR2RGB)
-        
-        img = np.asarray(img, np.float64)/255
-                
-        # Gaussian Noise Augmentation
-        # if self.add_noise and random.random() < 0.1:  # 10% 확률
-        if self.add_noise:
-            # noise = np.random.normal(0, 0.05, img.shape).astype(np.uint8)  # 평균 0, 표준편차 25인 노이즈 생성
-            noise = np.random.normal(0, self.noise_var, img.shape)
-            img = cv2.add(img, self.noise_amount*noise)  # 이미지에 노이즈 추가
-            # img1 = random_noise(img, mode='gaussian', mean=0, var=0.05, clip=True)
 
         # Text Label
         label = self.labels[index]
 
-        return (img, label)
+        return (img, label, self.img_paths[index])
 
 
 if __name__ == "__main__":
